@@ -18,8 +18,11 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(gtest)
 
+add_executable(Lib
+        lib/gc_impl.cpp)
+
 add_executable(BaseTest
 tests/test.cpp
-        include/gc.h)
+        include/gc_impl.h)
 
 target_link_libraries(BaseTest gtest gtest_main)

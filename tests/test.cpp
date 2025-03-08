@@ -1,87 +1,96 @@
 #include <gtest/gtest.h>
 
-#include "gc.h"
+#include "gc_impl.h"
 #include <iostream>
 
-std::string tester;
+void TestFinalizer(void *ptr, size_t size) {
+    std::cout << "Finalizer called for ptr: " << ptr << ", size: " << size << std::endl;
+}
 
-struct A {
-    A() {
-        tester += "A() ";
-    }
-    ~A() {
-        tester += "~A()";
-    }
+TEST(AllocTest, BasicAlloc) {
+    void* ptr1 = gc_malloc(sizeof(int));
+    void* ptr2 = gc_malloc(sizeof(double));
+
+    GarbageCollector::GetInstance().CollectGarbage();
+
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 2);
+
+    GarbageCollector::GetInstance().DeleteRoot(ptr1);
+    GarbageCollector::GetInstance().DeleteRoot(ptr2);
+
+    GarbageCollector::GetInstance().CollectGarbage();
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
+}
+
+class TestClass {
+public:
+    int value;
+
+    TestClass(int v) : value(v) {}
 };
 
-TEST(AllocTest, Collect) {
-    {
-        auto ptr = GcNew<A>();
-        tester += "| ";
-        GarbageCollector::GetInstance().CollectGarbage();
-    }
+TEST(FinalizerTest, FinalizerFunctionality) {
+    void* ptr = gc_malloc_manage(sizeof(TestClass), TestFinalizer);
+    new (ptr) TestClass(42); // Размещаем объект в выделенной памяти
+
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 1);
+
+    GarbageCollector::GetInstance().DeleteRoot(ptr);
     GarbageCollector::GetInstance().CollectGarbage();
-    ASSERT_EQ(tester, "A() | ~A()");
+
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }
 
-TEST(AllocTest, TripleCollect) {
-    tester.clear();
-    {
-        auto ptr1 = GcNew<A>();
-        auto ptr2 = GcNew<A>();
-        auto ptr3 = GcNew<A>();
-        tester += "| ";
-        GarbageCollector::GetInstance().CollectGarbage();
-    }
+TEST(GCChainTest, GarbageCollectionWithChains) {
+    struct Node {
+        Node* next;
+        int value;
+    };
+
+    void* node1 = gc_malloc(sizeof(Node));
+    void* node2 = gc_malloc(sizeof(Node));
+    void* node3 = gc_malloc(sizeof(Node));
+
+    new (node1) Node{reinterpret_cast<Node*>(node2), 1};
+    new (node2) Node{reinterpret_cast<Node*>(node3), 2};
+    new (node3) Node{nullptr, 3};
+
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
+
+    GarbageCollector::GetInstance().DeleteRoot(node2);
+    GarbageCollector::GetInstance().DeleteRoot(node3);
+
     GarbageCollector::GetInstance().CollectGarbage();
-    ASSERT_EQ(tester, "A() A() A() | ~A()~A()~A()");
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
+
+    GarbageCollector::GetInstance().DeleteRoot(node1);
+    GarbageCollector::GetInstance().CollectGarbage();
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }
 
-TEST(AllocTest, Array) {
-    {
-        auto arr = GcNewArr<int>(5);
-        for (int i = 0; i < 5; ++i) {
-            arr[i] = i * 10;
-        }
-        for (int i = 0; i < 5; ++i) {
-            ASSERT_EQ(arr[i], i * 10);
-        }
-    }
+TEST(GCCyclycTest, GarbageCollectionWithCycles) {
+    struct Node {
+        Node* next;
+        int value;
+    };
+
+    void* node1 = gc_malloc(sizeof(Node));
+    void* node2 = gc_malloc(sizeof(Node));
+    void* node3 = gc_malloc(sizeof(Node));
+
+    new (node1) Node{reinterpret_cast<Node*>(node2), 1};
+    new (node2) Node{reinterpret_cast<Node*>(node3), 2};
+    new (node3) Node{reinterpret_cast<Node*>(node1), 3};
+
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
+
+    GarbageCollector::GetInstance().DeleteRoot(node2);
+    GarbageCollector::GetInstance().DeleteRoot(node3);
+
     GarbageCollector::GetInstance().CollectGarbage();
-}
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
 
-TEST(AllocTest, Reset) {
-    tester.clear();
-    {
-        auto ptr1 = GcNew<A>();
-        auto ptr2 = GcNew<A>();
-
-        ptr1.Reset();
-        GarbageCollector::GetInstance().CollectGarbage();
-        tester += " | ";
-    }
+    GarbageCollector::GetInstance().DeleteRoot(node1);
     GarbageCollector::GetInstance().CollectGarbage();
-    ASSERT_EQ(tester, "A() A() ~A() | ~A()");
-}
-
-struct Node {
-    GcPtr<Node> next;
-    Node() {
-        tester += "Node()";
-    }
-    ~Node() {
-        tester += "~Node()";
-    }
-};
-
-TEST(AllocTest, Cyclyc) {
-    {
-        auto node1 = GcNew<Node>();
-        auto node2 = GcNew<Node>();
-
-        node1->next = node2;
-        node2->next = node1;
-    }
-    GarbageCollector::GetInstance().CollectGarbage();
-    ASSERT_EQ(tester, "Node()Node()~Node()~Node()");
+    EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }

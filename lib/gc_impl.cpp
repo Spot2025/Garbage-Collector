@@ -86,17 +86,3 @@ void GarbageCollector::CollectGarbage() {
 size_t GarbageCollector::GetAllocationsCount() {
     return allocations_.size();
 }
-
-void* gc_malloc(size_t size) {
-    void *ptr = malloc(size);
-    GarbageCollector::GetInstance().AddAllocation(ptr, size);
-    GarbageCollector::GetInstance().AddRoot(ptr);
-    return ptr;
-}
-
-void* gc_malloc_manage(size_t size, FinalizerT finalizer) {
-    void *ptr = malloc(size);
-    GarbageCollector::GetInstance().AddAllocation(ptr, size, finalizer);
-    GarbageCollector::GetInstance().AddRoot(ptr);
-    return ptr;
-}

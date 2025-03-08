@@ -19,7 +19,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(gtest)
 
 add_executable(Lib
-        lib/gc_impl.cpp)
+        lib/gc_impl.cpp
+lib/user_funcs_impl.cpp)
 
 add_executable(BaseTest
 tests/test.cpp

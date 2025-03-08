@@ -11,14 +11,14 @@ TEST(AllocTest, BasicAlloc) {
     void* ptr1 = gc_malloc(sizeof(int));
     void* ptr2 = gc_malloc(sizeof(double));
 
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_collect();
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 2);
 
-    GarbageCollector::GetInstance().DeleteRoot(ptr1);
-    GarbageCollector::GetInstance().DeleteRoot(ptr2);
+    gc_delete_root(ptr1);
+    gc_delete_root(ptr2);
 
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_collect();
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }
 
@@ -35,8 +35,8 @@ TEST(FinalizerTest, FinalizerFunctionality) {
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 1);
 
-    GarbageCollector::GetInstance().DeleteRoot(ptr);
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_delete_root(ptr);
+    gc_collect();
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }
@@ -57,14 +57,14 @@ TEST(GCChainTest, GarbageCollectionWithChains) {
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
 
-    GarbageCollector::GetInstance().DeleteRoot(node2);
-    GarbageCollector::GetInstance().DeleteRoot(node3);
+    gc_delete_root(node2);
+    gc_delete_root(node3);
 
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_collect();
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
 
-    GarbageCollector::GetInstance().DeleteRoot(node1);
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_delete_root(node1);
+    gc_collect();
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }
 
@@ -84,13 +84,13 @@ TEST(GCCyclycTest, GarbageCollectionWithCycles) {
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
 
-    GarbageCollector::GetInstance().DeleteRoot(node2);
-    GarbageCollector::GetInstance().DeleteRoot(node3);
+    gc_delete_root(node2);
+    gc_delete_root(node3);
 
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_collect();
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
 
-    GarbageCollector::GetInstance().DeleteRoot(node1);
-    GarbageCollector::GetInstance().CollectGarbage();
+    gc_delete_root(node1);
+    gc_collect();
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 0);
 }

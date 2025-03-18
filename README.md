@@ -27,6 +27,6 @@ void gc_collect();
 mkdir build
 cd build
 cmake ..
-make BaseTest
-./BaseTest
+make Tests
+./Tests
 ```

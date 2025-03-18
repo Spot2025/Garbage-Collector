@@ -9,6 +9,8 @@ void* gc_malloc(size_t size);
 
 void* gc_malloc_manage(size_t size, FinalizerT finalizer);
 
+void gc_add_root(void *ptr);
+
 void gc_delete_root(void *ptr);
 
 void gc_collect();
@@ -16,6 +18,7 @@ void gc_collect();
 
 * `gc_malloc` алоцирует указатель нужного размера.
 * `gc_malloc_manage` принимает также функцию-деструктор, которая вызовется, когда указатель будет освобожден.
+* `gc_add_root` добавляет указатель в список корневых
 * `gc_delete_root` вычеркивает данный указатель из списка корневых.
 * `gc_collect` освобождает не использующиеся указатели.
 

@@ -8,7 +8,7 @@
 
 #include "gc.h"
 
-void DefaultFinalizer(void *ptr, size_t size) {
+inline void DefaultFinalizer(void *ptr, size_t size) {
     return;
 }
 

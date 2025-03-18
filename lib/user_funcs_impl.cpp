@@ -3,7 +3,6 @@
 void* gc_malloc(size_t size) {
     void *ptr = malloc(size);
     GarbageCollector::GetInstance().AddAllocation(ptr, size);
-    GarbageCollector::GetInstance().AddRoot(ptr);
     return ptr;
 }
 
@@ -12,6 +11,10 @@ void* gc_malloc_manage(size_t size, FinalizerT finalizer) {
     GarbageCollector::GetInstance().AddAllocation(ptr, size, finalizer);
     GarbageCollector::GetInstance().AddRoot(ptr);
     return ptr;
+}
+
+void gc_add_root(void *ptr) {
+    GarbageCollector::GetInstance().AddRoot(ptr);
 }
 
 void gc_delete_root(void *ptr) {

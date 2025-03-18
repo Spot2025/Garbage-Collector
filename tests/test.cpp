@@ -11,6 +11,9 @@ TEST(AllocTest, BasicAlloc) {
     void* ptr1 = gc_malloc(sizeof(int));
     void* ptr2 = gc_malloc(sizeof(double));
 
+    gc_add_root(ptr1);  // Добавляем корень
+    gc_add_root(ptr2);  // Добавляем корень
+
     gc_collect();
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 2);
@@ -51,6 +54,10 @@ TEST(GCChainTest, GarbageCollectionWithChains) {
     void* node2 = gc_malloc(sizeof(Node));
     void* node3 = gc_malloc(sizeof(Node));
 
+    gc_add_root(node1);  // Добавляем корень
+    gc_add_root(node2);  // Добавляем корень
+    gc_add_root(node3);  // Добавляем корень
+
     new (node1) Node{reinterpret_cast<Node*>(node2), 1};
     new (node2) Node{reinterpret_cast<Node*>(node3), 2};
     new (node3) Node{nullptr, 3};
@@ -77,6 +84,10 @@ TEST(GCCyclycTest, GarbageCollectionWithCycles) {
     void* node1 = gc_malloc(sizeof(Node));
     void* node2 = gc_malloc(sizeof(Node));
     void* node3 = gc_malloc(sizeof(Node));
+
+    gc_add_root(node1);  // Добавляем корень
+    gc_add_root(node2);  // Добавляем корень
+    gc_add_root(node3);  // Добавляем корень
 
     new (node1) Node{reinterpret_cast<Node*>(node2), 1};
     new (node2) Node{reinterpret_cast<Node*>(node3), 2};

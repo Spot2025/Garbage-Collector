@@ -6,7 +6,7 @@
 #include "gc_impl.h"
 
 TEST(PerformanceBenchmark, AllocationAndCollection) {
-    const size_t num_objects = 10000;
+    const size_t num_objects = 100000;
     std::vector<void*> pointers;
 
     // Замер времени выделения памяти
@@ -51,7 +51,7 @@ TEST(PartialRootDeletionBenchmark, ComplexGraphWithPartialDeletion) {
         int value;
     };
 
-    const size_t num_nodes = 10000;
+    const size_t num_nodes = 100000;
     std::vector<void*> nodes;
 
     // Создаем сложный граф объектов
@@ -103,7 +103,7 @@ TEST(MultipleSmallCyclesBenchmark, ComplexGraphWithSmallCycles) {
         int value;
     };
 
-    const size_t num_nodes = 10000;
+    const size_t num_nodes = 100000;
     std::vector<void*> nodes;
 
     // Создаем граф с множеством небольших циклов

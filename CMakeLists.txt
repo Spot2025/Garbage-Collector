@@ -27,7 +27,11 @@ add_executable(Tests
         tests/benchmarks.cpp)
 
 add_executable(Benchmarks
-        tests/benchmarks.cpp)
+        tests/benchmarks.cpp
+        tests/realtimeBench.cpp)
 
 target_link_libraries(Tests Lib gtest gtest_main)
-target_link_libraries(Benchmarks Lib gtest gtest_main)
+
+find_package(benchmark REQUIRED)
+
+target_link_libraries(Benchmarks Lib gtest gtest_main benchmark::benchmark)

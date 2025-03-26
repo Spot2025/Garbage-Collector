@@ -1,18 +1,29 @@
 #include "gc_impl.h"
 
+#include <stack>
+
 void GarbageCollector::RemoveRoot(void *ptr) {
     roots_.erase(ptr);
 }
 
 void GarbageCollector::Mark(void *to_mark) {
-    Allocation &allocation = allocations_[to_mark];
-    if (allocation.marked_) {
-        return;
-    }
-    allocation.marked_ = true;
+    std::stack<void*> stack;
+    stack.push(to_mark);
 
-    for (auto edge : allocation.edges) {
-        Mark(edge);
+    while (!stack.empty()) {
+        void* current = stack.top();
+        stack.pop();
+
+        auto it = allocations_.find(current);
+        if (it == allocations_.end() || it->second.marked_) {
+            continue;
+        }
+
+        it->second.marked_ = true;
+
+        for (auto edge : it->second.edges) {
+            stack.push(edge);
+        }
     }
 }
 

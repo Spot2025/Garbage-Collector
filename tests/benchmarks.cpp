@@ -67,6 +67,8 @@ TEST(PartialRootDeletionBenchmark, ComplexGraphWithPartialDeletion) {
         Node* left = static_cast<Node*>(nodes[(i * 2 + 1) % num_nodes]);
         Node* right = static_cast<Node*>(nodes[(i * 2 + 2) % num_nodes]);
         new (current) Node{left, right, static_cast<int>(i)};
+        gc_add_edge(nodes[i], nodes[(i * 2 + 1) % num_nodes]);
+        gc_add_edge(nodes[i], nodes[(i * 2 + 2) % num_nodes]);
     }
     auto end_create = std::chrono::high_resolution_clock::now();
     auto create_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_create - start_create).count();
@@ -116,6 +118,7 @@ TEST(MultipleSmallCyclesBenchmark, ComplexGraphWithSmallCycles) {
         Node* current = static_cast<Node*>(nodes[i]);
         for (size_t j = 0; j < 3; ++j) {
             current->neighbors[j] = static_cast<Node*>(nodes[(i + j + 1) % num_nodes]);
+            gc_add_edge(nodes[i], nodes[(i + j + 1) % num_nodes]);
         }
         current->value = static_cast<int>(i);
     }

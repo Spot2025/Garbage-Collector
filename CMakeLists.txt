@@ -20,7 +20,7 @@ FetchContent_MakeAvailable(gtest)
 
 add_library(Lib
         lib/gc_impl.cpp
-        lib/user_funcs_impl.cpp)
+        lib/gc.cpp)
 
 add_executable(Tests
         tests/test.cpp

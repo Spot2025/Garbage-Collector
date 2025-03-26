@@ -16,8 +16,8 @@ class GarbageCollector {
     struct Allocation {
         size_t size_;
         void *ptr_;
-        size_t count_;
         bool marked_;
+        std::unordered_set<void*> edges;
         FinalizerT finalizer_;
     };
 
@@ -28,8 +28,6 @@ class GarbageCollector {
     GarbageCollector() = default;
 
     void RemoveRoot(void *ptr);
-
-    bool PointsTo(void *ptr, Allocation& a);
 
     void Mark(void *to_mark);
 
@@ -50,9 +48,9 @@ public:
 
     void DeleteRoot(void *ptr);
 
-    void IncreaseCount(void* ptr);
+    void AddEdge(void *parent, void *child);
 
-    void DecreaseCount(void* ptr);
+    void DeleteEdge(void *parent, void *child);
 
     void CollectGarbage();
 

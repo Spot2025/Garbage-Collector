@@ -1,30 +1,19 @@
 #include "gc_impl.h"
 
 void GarbageCollector::RemoveRoot(void *ptr) {
-    allocations_[ptr].count_ = 0;
     roots_.erase(ptr);
-}
-
-bool GarbageCollector::PointsTo(void *ptr, Allocation& a) {
-    uintptr_t uptr = reinterpret_cast<uintptr_t>(ptr);
-    uintptr_t aptr = reinterpret_cast<uintptr_t>(a.ptr_);
-    return (uptr >= aptr) && (uptr - aptr <= a.size_);
 }
 
 void GarbageCollector::Mark(void *to_mark) {
     Allocation &allocation = allocations_[to_mark];
+    if (allocation.marked_) {
+        return;
+    }
     allocation.marked_ = true;
 
-    for (uintptr_t ptr = (reinterpret_cast<uintptr_t>(allocation.ptr_) + alignof(void *) - 1) &
-        ~(alignof(void *) - 1); ptr - reinterpret_cast<uintptr_t>(allocation.ptr_) <= allocation.size_;
-        ptr += alignof(void *)) {
-        void *current = *reinterpret_cast<void **>(ptr);
-        for (auto& applicant: allocations_) {
-            if (PointsTo(current, applicant.second) && !applicant.second.marked_) {
-                Mark(applicant.first);
-            }
-        }
-        }
+    for (auto edge : allocation.edges) {
+        Mark(edge);
+    }
 }
 
 void GarbageCollector::Sweep() {
@@ -40,12 +29,12 @@ void GarbageCollector::Sweep() {
 }
 
 void GarbageCollector::AddAllocation(void *ptr, size_t size) {
-    Allocation allocation{size, ptr, 1, false, DefaultFinalizer};
+    Allocation allocation{size, ptr, false, std::unordered_set<void*>(), DefaultFinalizer};
     allocations_[ptr] = allocation;
 }
 
 void GarbageCollector::AddAllocation(void *ptr, size_t size, FinalizerT finalizer) {
-    Allocation allocation{size, ptr, 1, false, finalizer};
+    Allocation allocation{size, ptr, false, std::unordered_set<void*>(), finalizer};
     allocations_[ptr] = allocation;
 }
 
@@ -54,23 +43,15 @@ void GarbageCollector::AddRoot(void *ptr) {
 }
 
 void GarbageCollector::DeleteRoot(void *ptr) {
-    if (!roots_.contains(ptr)) {
-        throw std::runtime_error("Root not found");
-    }
     RemoveRoot(ptr);
 }
 
-void GarbageCollector::IncreaseCount(void* ptr) {
-    ++allocations_[ptr].count_;
+void GarbageCollector::AddEdge(void *parent, void *child) {
+    allocations_[parent].edges.insert(child);
 }
 
-void GarbageCollector::DecreaseCount(void* ptr) {
-    if (!allocations_.contains(ptr)) {
-        throw std::runtime_error("Allocation not found");
-    }
-    if (--allocations_[ptr].count_ == 0) {
-        roots_.erase(ptr);
-    }
+void GarbageCollector::DeleteEdge(void *parent, void *child) {
+    allocations_[parent].edges.erase(child);
 }
 
 void GarbageCollector::CollectGarbage() {

@@ -13,6 +13,14 @@ void* gc_malloc_manage(size_t size, FinalizerT finalizer) {
     return ptr;
 }
 
+void gc_add_edge(void *parent, void *child) {
+    GarbageCollector::GetInstance().AddEdge(parent, child);
+}
+
+void gc_del_edge(void *parent, void *child) {
+    GarbageCollector::GetInstance().DeleteEdge(parent, child);
+}
+
 void gc_add_root(void *ptr) {
     GarbageCollector::GetInstance().AddRoot(ptr);
 }

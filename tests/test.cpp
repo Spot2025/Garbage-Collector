@@ -59,7 +59,9 @@ TEST(GCChainTest, GarbageCollectionWithChains) {
     gc_add_root(node3);  // Добавляем корень
 
     new (node1) Node{reinterpret_cast<Node*>(node2), 1};
+    gc_add_edge(node1, node2);
     new (node2) Node{reinterpret_cast<Node*>(node3), 2};
+    gc_add_edge(node2, node3);
     new (node3) Node{nullptr, 3};
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
@@ -90,8 +92,11 @@ TEST(GCCyclycTest, GarbageCollectionWithCycles) {
     gc_add_root(node3);  // Добавляем корень
 
     new (node1) Node{reinterpret_cast<Node*>(node2), 1};
+    gc_add_edge(node1, node2);
     new (node2) Node{reinterpret_cast<Node*>(node3), 2};
+    gc_add_edge(node2, node3);
     new (node3) Node{reinterpret_cast<Node*>(node1), 3};
+    gc_add_edge(node3, node1);
 
     EXPECT_EQ(GarbageCollector::GetInstance().GetAllocationsCount(), 3);
 

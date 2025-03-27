@@ -7,7 +7,9 @@
 #include <mutex>
 #include <shared_mutex>
 #include <atomic>
+#include <condition_variable>
 #include <cstdlib>
+#include <thread>
 
 #include "gc.h"
 
@@ -40,6 +42,16 @@ class GarbageCollector {
     std::atomic<bool> gc_in_progress_{false};
     std::shared_mutex gc_mutex_;
 
+    std::atomic<bool> incremental_mark_{false};
+    std::deque<void*>::iterator mark_iterator_;
+    size_t steps_per_increment_{100};
+
+    std::atomic<bool> background_collector_running_{false};
+    std::thread background_collector_thread_;
+    int background_collector_interval_{100};
+    std::condition_variable background_cv_;
+    std::mutex background_mutex_;
+
     GarbageCollector() = default;
     void RemoveRoot(void *ptr);
     void Mark();
@@ -59,6 +71,17 @@ public:
     void AddEdge(void *parent, void *child);
     void DeleteEdge(void *parent, void *child);
     void CollectGarbage();
+
+    void StartIncrementalMark();
+    void StepMark();
+    bool IsMarking() const;
+    void FinishIncrementalMark();
+    void SetStepsPerIncrement(size_t steps);
+
+    void StartBackgroundCollector(size_t steps, int interval_ms);
+    void StopBackgroundCollector();
+    bool IsBackgroundCollectorRunning() const;
+    void BackgroundCollectorLoop();
 
     // FOR TESTING
     size_t GetAllocationsCount();

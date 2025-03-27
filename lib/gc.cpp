@@ -35,3 +35,32 @@ void gc_delete_root(void *ptr) {
 void gc_collect() {
     GarbageCollector::GetInstance().CollectGarbage();
 }
+
+
+void gc_start_incremental_mark() {
+    GarbageCollector::GetInstance().StartIncrementalMark();
+}
+
+void gc_step_mark() {
+    GarbageCollector::GetInstance().StepMark();
+}
+
+bool gc_is_marking() {
+    return GarbageCollector::GetInstance().IsMarking();
+}
+
+void gc_finish_incremental_mark() {
+    GarbageCollector::GetInstance().FinishIncrementalMark();
+}
+
+void gc_start_background_collector(size_t steps, int interval_ms) {
+    GarbageCollector::GetInstance().StartBackgroundCollector(steps, interval_ms);
+}
+
+void gc_stop_background_collector() {
+    GarbageCollector::GetInstance().StopBackgroundCollector();
+}
+
+bool gc_is_background_collector_running() {
+    return GarbageCollector::GetInstance().IsBackgroundCollectorRunning();
+}

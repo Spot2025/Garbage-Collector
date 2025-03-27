@@ -34,9 +34,13 @@ add_executable(Benchmarks
 add_executable(RealApplicationBenchmarks
         tests/realApplicationBench.cpp)
 
+add_executable(Compare
+        tests/compare.cpp)
+
 target_link_libraries(Tests Lib gtest gtest_main)
 
 find_package(benchmark REQUIRED)
 
 target_link_libraries(Benchmarks Lib gtest gtest_main benchmark::benchmark)
 target_link_libraries(RealApplicationBenchmarks Lib gtest gtest_main benchmark::benchmark)
+target_link_libraries(Compare Lib gtest gtest_main benchmark::benchmark)

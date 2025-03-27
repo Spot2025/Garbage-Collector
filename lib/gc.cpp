@@ -2,14 +2,17 @@
 
 void* gc_malloc(size_t size) {
     void *ptr = malloc(size);
-    GarbageCollector::GetInstance().AddAllocation(ptr, size);
+    if (ptr) {
+        GarbageCollector::GetInstance().AddAllocation(ptr, size);
+    }
     return ptr;
 }
 
 void* gc_malloc_manage(size_t size, FinalizerT finalizer) {
     void *ptr = malloc(size);
-    GarbageCollector::GetInstance().AddAllocation(ptr, size, finalizer);
-    GarbageCollector::GetInstance().AddRoot(ptr);
+    if (ptr) {
+        GarbageCollector::GetInstance().AddAllocation(ptr, size, finalizer);
+    }
     return ptr;
 }
 

@@ -16,12 +16,46 @@ void* gc_malloc_manage(size_t size, FinalizerT finalizer) {
     return ptr;
 }
 
+void* gc_malloc_root(size_t size) {
+    void *ptr = malloc(size);
+    if (ptr) {
+        GarbageCollector::GetInstance().AddRootAllocation(ptr, size);
+    }
+    return ptr;
+}
+void* gc_malloc_root_manage(size_t size, FinalizerT finalizer) {
+    void *ptr = malloc(size);
+    if (ptr) {
+        GarbageCollector::GetInstance().AddRootAllocation(ptr, size, finalizer);
+    }
+    return ptr;
+}
+
+void* gc_malloc_with_parent(size_t size, void *parent) {
+    void *ptr = malloc(size);
+    if (ptr) {
+        GarbageCollector::GetInstance().AddAllocationWithParent(ptr, size, parent);
+    }
+    return ptr;
+}
+void* gc_malloc_with_parent_manage(size_t size, void *parent, FinalizerT finalizer) {
+    void *ptr = malloc(size);
+    if (ptr) {
+        GarbageCollector::GetInstance().AddAllocationWithParent(ptr, size, parent, finalizer);
+    }
+    return ptr;
+}
+
 void gc_add_edge(void *parent, void *child) {
     GarbageCollector::GetInstance().AddEdge(parent, child);
 }
 
 void gc_del_edge(void *parent, void *child) {
     GarbageCollector::GetInstance().DeleteEdge(parent, child);
+}
+
+void gc_swap_edge(void *parent, void *child1, void *child2) {
+    GarbageCollector::GetInstance().SwapEdge(parent, child1, child2);
 }
 
 void gc_add_root(void *ptr) {

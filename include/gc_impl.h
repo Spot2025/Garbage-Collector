@@ -64,12 +64,14 @@ public:
     GarbageCollector(const GarbageCollector&) = delete;
     GarbageCollector& operator=(const GarbageCollector&) = delete;
 
-    void AddAllocation(void *ptr, size_t size);
-    void AddAllocation(void *ptr, size_t size, FinalizerT finalizer);
+    void AddAllocation(void *ptr, size_t size, FinalizerT finalizer=DefaultFinalizer);
+    void AddRootAllocation(void *ptr, size_t size, FinalizerT finalizer=DefaultFinalizer);
+    void AddAllocationWithParent(void *ptr, size_t size, void *parent, FinalizerT finalizer=DefaultFinalizer);
     void AddRoot(void *ptr);
     void DeleteRoot(void *ptr);
     void AddEdge(void *parent, void *child);
     void DeleteEdge(void *parent, void *child);
+    void SwapEdge(void *parent, void *child1, void *child2);
     void CollectGarbage();
     void BlockCollect();
     void UnlockCollect();

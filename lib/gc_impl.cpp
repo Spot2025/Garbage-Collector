@@ -79,14 +79,34 @@ void GarbageCollector::Sweep() {
     }
 }
 
-void GarbageCollector::AddAllocation(void *ptr, size_t size) {
-    std::unique_lock<std::shared_mutex> lock(allocations_mutex_);
-    allocations_[ptr] = {size, ptr, Color::White, {}, DefaultFinalizer};
-}
-
 void GarbageCollector::AddAllocation(void *ptr, size_t size, FinalizerT finalizer) {
     std::unique_lock<std::shared_mutex> lock(allocations_mutex_);
     allocations_[ptr] = {size, ptr, Color::White, {}, finalizer};
+}
+
+void GarbageCollector::AddRootAllocation(void *ptr, size_t size, FinalizerT finalizer) {
+    std::unique_lock<std::shared_mutex> lock_alloc(allocations_mutex_);
+    std::unique_lock<std::shared_mutex> lock_roots(roots_mutex_);
+    allocations_[ptr] = {size, ptr, Color::White, {}, finalizer};
+    roots_.insert(ptr);
+}
+
+void GarbageCollector::AddAllocationWithParent(void *ptr, size_t size, void *parent, FinalizerT finalizer) {
+    std::unique_lock<std::shared_mutex> lock_alloc(allocations_mutex_);
+    std::unique_lock<std::shared_mutex> lock_roots(roots_mutex_);
+    allocations_[ptr] = {size, ptr, Color::White, {}, finalizer};
+
+    auto parent_it = allocations_.find(parent);
+    auto child_it = allocations_.find(ptr);
+    parent_it->second.edges.insert(ptr);
+
+    if (gc_in_progress_.load() &&
+        parent_it->second.color_ == Color::Black &&
+        child_it->second.color_ == Color::White) {
+        child_it->second.color_ = Color::Gray;
+        std::unique_lock<std::mutex> gray_lock(gray_mutex_);
+        gray_objects_.push_back(ptr);
+        }
 }
 
 void GarbageCollector::AddRoot(void *ptr) {
@@ -117,6 +137,25 @@ void GarbageCollector::DeleteEdge(void *parent, void *child) {
     std::shared_lock<std::shared_mutex> alloc_lock(allocations_mutex_);
     allocations_[parent].edges.erase(child);
 }
+
+void GarbageCollector::SwapEdge(void *parent, void *child1, void *child2) {
+    std::shared_lock<std::shared_mutex> alloc_lock(allocations_mutex_);
+
+    allocations_[parent].edges.erase(child1);
+
+    auto parent_it = allocations_.find(parent);
+    auto child_it = allocations_.find(child2);
+    parent_it->second.edges.insert(child2);
+
+    if (gc_in_progress_.load() &&
+        parent_it->second.color_ == Color::Black &&
+        child_it->second.color_ == Color::White) {
+        child_it->second.color_ = Color::Gray;
+        std::unique_lock<std::mutex> gray_lock(gray_mutex_);
+        gray_objects_.push_back(child2);
+        }
+}
+
 
 void GarbageCollector::BlockCollect() {
     gc_mutex_.lock();

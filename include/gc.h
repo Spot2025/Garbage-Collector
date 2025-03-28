@@ -5,8 +5,13 @@ typedef void (*FinalizerT)(void *ptr, size_t size);
 
 void* gc_malloc(size_t size);
 void* gc_malloc_manage(size_t size, FinalizerT finalizer);
+void* gc_malloc_root(size_t size);
+void* gc_malloc_root_manage(size_t size, FinalizerT finalizer);
+void* gc_malloc_with_parent(size_t size, void *parent);
+void* gc_malloc_with_parent_manage(size_t size, void *parent, FinalizerT finalizer);
 void gc_add_edge(void *parent, void *child);
 void gc_del_edge(void *parent, void *child);
+void gc_swap_edge(void *parent, void *child1, void *child2);
 void gc_add_root(void *ptr);
 void gc_delete_root(void *ptr);
 void gc_block_collect();

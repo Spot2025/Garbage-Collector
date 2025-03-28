@@ -32,6 +32,14 @@ void gc_delete_root(void *ptr) {
     GarbageCollector::GetInstance().DeleteRoot(ptr);
 }
 
+void gc_block_collect() {
+    GarbageCollector::GetInstance().BlockCollect();
+}
+
+void gc_unlock_collect() {
+    GarbageCollector::GetInstance().UnlockCollect();
+}
+
 void gc_collect() {
     GarbageCollector::GetInstance().CollectGarbage();
 }

@@ -71,6 +71,8 @@ public:
     void AddEdge(void *parent, void *child);
     void DeleteEdge(void *parent, void *child);
     void CollectGarbage();
+    void BlockCollect();
+    void UnlockCollect();
 
     void StartIncrementalMark();
     void StepMark();

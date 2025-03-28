@@ -9,6 +9,8 @@ void gc_add_edge(void *parent, void *child);
 void gc_del_edge(void *parent, void *child);
 void gc_add_root(void *ptr);
 void gc_delete_root(void *ptr);
+void gc_block_collect();
+void gc_unlock_collect();
 void gc_collect();
 
 void gc_start_incremental_mark();

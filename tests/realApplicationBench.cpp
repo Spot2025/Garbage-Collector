@@ -48,6 +48,7 @@ static void createSocialNetwork(const TestConfig& config, std::vector<User*>& us
     std::uniform_int_distribution<> dis(0, config.users-1);
 
     users.resize(config.users);
+    gc_block_collect();
     for (int i = 0; i < config.users; ++i) {
         users[i] = new (gc_malloc_manage(sizeof(User), [](void* ptr, size_t) {
             static_cast<User*>(ptr)->~User();
@@ -62,6 +63,7 @@ static void createSocialNetwork(const TestConfig& config, std::vector<User*>& us
             }
         }
     }
+    gc_unlock_collect();
 
     for (int i = 0; i < config.users; ++i) {
         gc_delete_root(users[i]);
@@ -84,12 +86,14 @@ static void BM_ConcurrentGC_Extended(benchmark::State& state) {
 
     // Создаем активных пользователей (корни)
     std::vector<User*> activeUsers;
+    gc_block_collect();
     for (int i = 0; i < std::min(100, config.users/10); ++i) {
         User* u = new (gc_malloc_manage(sizeof(User), [](void* ptr, size_t) {
             static_cast<User*>(ptr)->~User();
         })) User(config.users + i);
         activeUsers.push_back(u);
     }
+    gc_unlock_collect();
 
     // Запускаем поток сборщика мусора
     std::atomic<bool> gc_running{true};
@@ -119,6 +123,7 @@ static void BM_ConcurrentGC_Extended(benchmark::State& state) {
                     // Динамическое изменение корней
                     if (config.dynamic_roots && ++root_change_counter % 100 == 0) {
                         int idx = rand() % activeUsers.size();
+                        gc_block_collect();
                         gc_delete_root(activeUsers[idx]);
 
                         User* new_user = new (gc_malloc_manage(sizeof(User), [](void* ptr, size_t) {
@@ -127,6 +132,7 @@ static void BM_ConcurrentGC_Extended(benchmark::State& state) {
 
                         activeUsers[idx] = new_user;
                         gc_add_root(new_user);
+                        gc_unlock_collect();
                     }
                 }
             });
@@ -145,6 +151,9 @@ static void BM_ConcurrentGC_Extended(benchmark::State& state) {
     for (auto user : activeUsers) {
         gc_delete_root(user);
     }
+    // for (auto user : users) {
+    //     gc_delete_root(user);
+    // }
     gc_collect();
 
     // Дополнительные метрики

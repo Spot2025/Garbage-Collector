@@ -118,6 +118,14 @@ void GarbageCollector::DeleteEdge(void *parent, void *child) {
     allocations_[parent].edges.erase(child);
 }
 
+void GarbageCollector::BlockCollect() {
+    gc_mutex_.lock();
+}
+
+void GarbageCollector::UnlockCollect() {
+    gc_mutex_.unlock();
+}
+
 void GarbageCollector::CollectGarbage() {
     std::unique_lock<std::shared_mutex> gc_lock(gc_mutex_);
     gc_in_progress_.store(true);
@@ -232,14 +240,14 @@ bool GarbageCollector::IsBackgroundCollectorRunning() const {
 }
 
 void GarbageCollector::BackgroundCollectorLoop() {
-    while (background_collector_running_) {
+    while (background_collector_running_.load()) {
         {
             std::unique_lock<std::mutex> lock(background_mutex_);
             background_cv_.wait_for(lock,
                 std::chrono::milliseconds(background_collector_interval_),
                 [this] { return !background_collector_running_; });
 
-            if (!background_collector_running_) {
+            if (!background_collector_running_.load()) {
                 break;
             }
         }

@@ -46,6 +46,9 @@ static void createSocialNetwork(const TestConfig& config, std::vector<User*>& us
     std::uniform_int_distribution<> dis(0, config.users-1);
 
     users.resize(config.users);
+
+    gc_block_collect();
+
     for (int i = 0; i < config.users; ++i) {
         users[i] = new (gc_malloc_manage(sizeof(User), [](void* ptr, size_t) {
             static_cast<User*>(ptr)->~User();
@@ -60,6 +63,8 @@ static void createSocialNetwork(const TestConfig& config, std::vector<User*>& us
             }
         }
     }
+
+    gc_unlock_collect();
 
     for (int i = 0; i < config.users; ++i) {
         gc_delete_root(users[i]);
@@ -77,7 +82,8 @@ static void BM_StandardGC(benchmark::State& state) {
     
     std::vector<User*> users;
     createSocialNetwork(config, users);
-    
+
+    gc_block_collect();
     std::vector<User*> activeUsers;
     for (int i = 0; i < std::min(100, config.users/10); ++i) {
         User* u = new (gc_malloc_manage(sizeof(User), [](void* ptr, size_t) {
@@ -85,6 +91,7 @@ static void BM_StandardGC(benchmark::State& state) {
         })) User(config.users + i);
         activeUsers.push_back(u);
     }
+    gc_unlock_collect();
 
     for (auto _ : state) {
         std::vector<std::thread> threads;
@@ -126,7 +133,8 @@ static void BM_IncrementalGC(benchmark::State& state) {
     
     std::vector<User*> users;
     createSocialNetwork(config, users);
-    
+
+    gc_block_collect();
     std::vector<User*> activeUsers;
     for (int i = 0; i < std::min(100, config.users/10); ++i) {
         User* u = new (gc_malloc_manage(sizeof(User), [](void* ptr, size_t) {
@@ -134,6 +142,7 @@ static void BM_IncrementalGC(benchmark::State& state) {
         })) User(config.users + i);
         activeUsers.push_back(u);
     }
+    gc_unlock_collect();
 
     // Запускаем фоновый инкрементальный сборщик
     gc_start_background_collector(config.steps, config.gc_interval_ms);
